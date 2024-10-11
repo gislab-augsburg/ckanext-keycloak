@@ -73,7 +73,7 @@ def sso_login():
         context['user'] = g.user
         context['auth_user_obj'] = g.user_obj
 
-        response = tk.redirect_to('')
+        response = tk.redirect_to(tk.url_for('user.me', context))
 
         _log_user_into_ckan(response)
         log.info("Logged in success")
