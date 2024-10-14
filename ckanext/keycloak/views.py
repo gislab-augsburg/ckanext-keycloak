@@ -41,7 +41,7 @@ def _log_user_into_ckan(resp):
     set_repoze_user(user_id, resp)
 
     log.info(u'User {0}<{1}> logged in successfully'.format(g.user_obj.name, g.user_obj.email))
-    success_string = tk._(u'User {0}<{1}> logged in successfully'.format(g.user_obj.name, g.user_obj.email))
+    success_string = tk._('User {0}<{1}> logged in successfully'.format(g.user_obj.name, g.user_obj.email))
     h.flash_success(success_string)
 
 def sso():
