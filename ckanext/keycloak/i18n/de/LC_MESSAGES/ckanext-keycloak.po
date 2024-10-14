@@ -1,0 +1,81 @@
+# German translations for ckanext-keycloak.
+# Copyright (C) 2024 ORGANIZATION
+# This file is distributed under the same license as the ckanext-keycloak
+# project.
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2024.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: ckanext-keycloak 0.0.1\n"
+"Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
+"POT-Creation-Date: 2024-10-14 08:57+0000\n"
+"PO-Revision-Date: 2024-10-14 09:14+0000\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language: de\n"
+"Language-Team: de <LL@li.org>\n"
+"Plural-Forms: nplurals=2; plural=(n != 1)\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: Babel 2.7.0\n"
+
+#: ckanext/keycloak/views.py:44
+msgid "User {0}<{1}> logged in successfully"
+msgstr "Benutzer {0} <{1}> wurde erfolgreich angemeldet."
+
+#: ckanext/keycloak/templates/header.html:21
+msgid "Log in"
+msgstr ""
+
+#: ckanext/keycloak/templates/header.html:23
+#: ckanext/keycloak/templates/user/new.html:3
+msgid "Register"
+msgstr ""
+
+#: ckanext/keycloak/templates/user/new.html:6
+msgid "Registration"
+msgstr ""
+
+#: ckanext/keycloak/templates/user/new.html:14
+msgid "Register for an Account"
+msgstr ""
+
+#: ckanext/keycloak/templates/user/new.html:23
+#: ckanext/keycloak/templates/user/snippets/login_form.html:23
+msgid "Sign in with Google"
+msgstr ""
+
+#: ckanext/keycloak/templates/user/new.html:25
+#: ckanext/keycloak/templates/user/snippets/login_form.html:25
+msgid "Sign in with AzureAD"
+msgstr ""
+
+#: ckanext/keycloak/templates/user/new.html:27
+#: ckanext/keycloak/templates/user/snippets/login_form.html:27
+msgid "SSO"
+msgstr ""
+
+#: ckanext/keycloak/templates/user/new.html:43
+msgid "Why Sign Up?"
+msgstr ""
+
+#: ckanext/keycloak/templates/user/new.html:45
+msgid "Create datasets, groups and other exciting things"
+msgstr ""
+
+#: ckanext/keycloak/templates/user/request_reset.html:7
+msgid "Reset your password"
+msgstr ""
+
+#: ckanext/keycloak/templates/user/request_reset.html:11
+msgid "Email or username"
+msgstr ""
+
+#: ckanext/keycloak/templates/user/request_reset.html:16
+msgid "Request Reset"
+msgstr ""
+
+#: ckanext/keycloak/templates/user/snippets/login_form.html:32
+msgid "Login"
+msgstr ""
+
