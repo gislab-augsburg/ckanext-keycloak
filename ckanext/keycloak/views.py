@@ -19,6 +19,10 @@ client_id = tk.config.get('ckanext.keycloak.client_id', environ.get('CKANEXT__KE
 realm_name = tk.config.get('ckanext.keycloak.realm_name', environ.get('CKANEXT__KEYCLOAK__REALM_NAME'))
 redirect_uri = tk.config.get('ckanext.keycloak.redirect_uri', environ.get('CKANEXT__KEYCLOAK__REDIRECT_URI'))
 client_secret_key = tk.config.get('ckanext.keycloak.client_secret_key', environ.get('CKANEXT__KEYCLOAK__CLIENT_SECRET_KEY'))
+if tk.config.get('ckanext.keycloak.scope', environ.get('CKANEXT__KEYCLOAK__SCOPE')) is not None:#
+    h.flash_error('Scope: ' + tk.config.get('ckanext.keycloak.scope', environ.get('CKANEXT__KEYCLOAK__SCOPE')))
+else:
+    h.flash_error('Scope: None')
 scope = tk.config.get('ckanext.keycloak.scope', environ.get('CKANEXT__KEYCLOAK__SCOPE'))
 
 client = KeycloakClient(server_url, client_id, realm_name, client_secret_key, scope)
