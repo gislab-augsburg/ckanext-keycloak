@@ -16,6 +16,11 @@ class KeycloakClient:
         )
 
     def get_auth_url(self, redirect_uri):
+        if self.scope is not None:
+            log.info('SCOPE:')
+            log.info(self.scope)
+        else:
+            log.info('SCOPE: None')
         return self.get_keycloak_client().auth_url(redirect_uri=redirect_uri, scope=self.scope)
 
     def get_token(self, code, redirect_uri):
