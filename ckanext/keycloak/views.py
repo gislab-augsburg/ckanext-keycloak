@@ -65,7 +65,7 @@ def sso_login():
             'password': helpers.generate_password(),
             'fullname': userinfo['name'],
             'plugin_extras': {
-                'idp': 'google'
+                'idp': 'sso'
             }
         }
         context = {"model": model, "session": model.Session}
@@ -93,9 +93,9 @@ def reset_password():
         log.info(u'User requested reset link for unknown user: {}'.format(email))
         return tk.redirect_to(tk.url_for('user.login'))
     user_extras = user[0].plugin_extras
-    if user_extras and user_extras.get('idp', None) == 'google':
-        log.info(u'User requested reset link for google user: {}'.format(email))
-        h.flash_error('Invalid email address')
+    if user_extras and user_extras.get('idp', None) == 'sso':
+        log.info(u'User requested reset link for sso user: {}'.format(email))
+        h.flash_error('Password reset for SSO user not possible')
         return tk.redirect_to(tk.url_for('user.login'))
     return RequestResetView().post()
 
