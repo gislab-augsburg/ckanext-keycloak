@@ -72,6 +72,8 @@ Configuration settings to run the extension
     ckanext.keycloak.button_style = google/azure (if empty it will have the default stile)
     ckanext.keycloak.enable_ckan_internal_login = True or False
     ckanext.keycloak.scope = openid profile email (define other keycloak scopes here if necessary)
+    ckanext.keycloak.user_name = preferred_username (keycloak token key which will be used for ckan user name)
+    ckanext.keycloak.user_fullname = name (keycloak token key which will be used for ckan user fullname)
     
 
 ## Developer installation

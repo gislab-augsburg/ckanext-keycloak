@@ -19,7 +19,9 @@ client_id = tk.config.get('ckanext.keycloak.client_id', environ.get('CKANEXT__KE
 realm_name = tk.config.get('ckanext.keycloak.realm_name', environ.get('CKANEXT__KEYCLOAK__REALM_NAME'))
 redirect_uri = tk.config.get('ckanext.keycloak.redirect_uri', environ.get('CKANEXT__KEYCLOAK__REDIRECT_URI'))
 client_secret_key = tk.config.get('ckanext.keycloak.client_secret_key', environ.get('CKANEXT__KEYCLOAK__CLIENT_SECRET_KEY'))
-scope = tk.config.get('ckanext.keycloak.scope', environ.get('CKANEXT__KEYCLOAK__SCOPE'))
+scope = tk.config.get('ckanext.keycloak.scope', environ.get('CKANEXT__KEYCLOAK__SCOPE'), 'openid profile email')
+user_name = tk.config.get('ckanext.keycloak.user_name', environ.get('CKANEXT__KEYCLOAK__USER_NAME'), 'preferred_username')
+user_fullname = tk.config.get('ckanext.keycloak.user_fullname', environ.get('CKANEXT__KEYCLOAK__USER_FULLNAME'), 'name')
 
 client = KeycloakClient(server_url, client_id, realm_name, client_secret_key, scope)
 
@@ -60,10 +62,10 @@ def sso_login():
     log.info("SSO Login: {}".format(userinfo))
     if userinfo:
         user_dict = {
-            'name': helpers.ensure_unique_username_from_email(userinfo['preferred_username']),
+            'name': helpers.ensure_unique_username_from_email(userinfo[user_name]),
             'email': userinfo['email'],
             'password': helpers.generate_password(),
-            'fullname': userinfo['name'],
+            'fullname': userinfo[user_fullname],
             'plugin_extras': {
                 'idp': 'sso'
             }
