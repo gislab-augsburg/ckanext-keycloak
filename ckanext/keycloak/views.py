@@ -19,9 +19,9 @@ client_id = tk.config.get('ckanext.keycloak.client_id', environ.get('CKANEXT__KE
 realm_name = tk.config.get('ckanext.keycloak.realm_name', environ.get('CKANEXT__KEYCLOAK__REALM_NAME'))
 redirect_uri = tk.config.get('ckanext.keycloak.redirect_uri', environ.get('CKANEXT__KEYCLOAK__REDIRECT_URI'))
 client_secret_key = tk.config.get('ckanext.keycloak.client_secret_key', environ.get('CKANEXT__KEYCLOAK__CLIENT_SECRET_KEY'))
-scope = tk.config.get('ckanext.keycloak.scope', environ.get('CKANEXT__KEYCLOAK__SCOPE'), 'openid profile email')
-user_name = tk.config.get('ckanext.keycloak.user_name', environ.get('CKANEXT__KEYCLOAK__USER_NAME'), 'preferred_username')
-user_fullname = tk.config.get('ckanext.keycloak.user_fullname', environ.get('CKANEXT__KEYCLOAK__USER_FULLNAME'), 'name')
+scope = tk.config.get('ckanext.keycloak.scope', environ.get('CKANEXT__KEYCLOAK__SCOPE'))
+user_name = tk.config.get('ckanext.keycloak.user_name', environ.get('CKANEXT__KEYCLOAK__USER_NAME'))
+user_fullname = tk.config.get('ckanext.keycloak.user_fullname', environ.get('CKANEXT__KEYCLOAK__USER_FULLNAME'))
 
 client = KeycloakClient(server_url, client_id, realm_name, client_secret_key, scope)
 
