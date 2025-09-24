@@ -9,7 +9,7 @@ from ckanext.keycloak.keycloak import KeycloakClient
 import ckanext.keycloak.helpers as helpers
 from os import environ
 
-# NEW: for safe return + session handling and logging
+# for safe return + session handling and logging
 from urllib.parse import urlparse
 from ckan.common import session as ckan_session, config as ckan_config, request as ckan_request
 
@@ -50,43 +50,54 @@ def _log_user_into_ckan(resp):
     log.info(u'User {0}<{1}> logged in successfully'.format(g.user_obj.name, g.user_obj.email))
 
 
-# NEW: determine a safe return URL (same-origin, no auth routes)
 def _safe_return_to():
+    """
+    Decide a safe URL to return to (same-origin; no auth endpoints).
+    Prefers ?came_from (configurable param) over Referer if enabled.
+    """
     site_url = (ckan_config.get('ckan.site_url') or '').rstrip('/')
-    came_from = ckan_request.params.get('came_from')
-    referer = ckan_request.headers.get('Referer')
-    candidates = [came_from, referer, site_url or '/']
 
-    bad_paths = (
-        '/user/sso', '/user/sso_login', '/user/login', '/user/_logout',
-        '/user/logged_out', '/user/logged_out_redirect', '/user/reset', '/user/locked'
-    )
+    # Config flags (defaults preserve original behavior = feature off)
+    param_name = ckan_config.get('ckanext.keycloak.return_to_param', 'came_from')
+    prefer_param = tk.asbool(ckan_config.get('ckanext.keycloak.return_to_prefer_param', True))
+    same_origin_only = tk.asbool(ckan_config.get('ckanext.keycloak.return_to_same_origin_only', True))
+    raw_disallow = ckan_config.get('ckanext.keycloak.return_to_disallow_paths', '')
+    if raw_disallow.strip():
+        disallow = tuple(raw_disallow.replace(',', ' ').split())
+    else:
+        disallow = (
+            '/user/sso', '/user/sso_login', '/user/login', '/user/_logout',
+            '/user/logged_out', '/user/logged_out_redirect', '/user/reset', '/user/locked'
+        )
 
-    for url in candidates:
-        if not url:
-            continue
-        if site_url and str(url).startswith(site_url):
-            path = urlparse(url).path
-            if path in bad_paths:
-                continue
-            return url
-    return site_url or '/'
+    source = ckan_request.params.get(param_name) if prefer_param else None
+    if not source:
+        source = ckan_request.headers.get('Referer')
+    target = source or site_url or '/'
+
+    try:
+        u = urlparse(target)
+        if same_origin_only and site_url and not str(target).startswith(site_url):
+            target = site_url or '/'
+        if u.path in disallow:
+            target = site_url or '/'
+    except Exception:
+        target = site_url or '/'
+
+    return target
 
 
 def sso():
     log.info("SSO Login")
-    # debug: confirm we actually receive came_from
-    log.info("came_from query param: %r ; Referer: %r",
-             ckan_request.params.get('came_from'),
-             ckan_request.headers.get('Referer'))
 
-    # remember where to return after SSO (FIRST URL wins)
-    try:
-        ckan_session['after_login_url'] = _safe_return_to()
-        ckan_session.save()
-        log.info("after_login_url stored in session: %r", ckan_session.get('after_login_url'))
-    except Exception as e:
-        log.warning("Could not store after_login_url in session: %r", e)
+    # Only store return target if feature is enabled
+    if tk.asbool(ckan_config.get('ckanext.keycloak.enable_return_to', False)):
+        try:
+            ckan_session['after_login_url'] = _safe_return_to()
+            ckan_session.save()
+            log.info("after_login_url stored in session: %r", ckan_session.get('after_login_url'))
+        except Exception as e:
+            log.warning("Could not store after_login_url in session: %r", e)
 
     try:
         auth_url = client.get_auth_url(redirect_uri=redirect_uri)
@@ -117,23 +128,35 @@ def sso_login():
         context['user'] = g.user
         context['auth_user_obj'] = g.user_obj
 
-        # PREFER the originally requested URL; fall back to your previous behavior
+        # Determine target
         target = None
-        try:
-            target = ckan_session.pop('after_login_url', None)
-            ckan_session.save()
-        except Exception as e:
-            log.warning("Could not pop after_login_url from session: %r", e)
-            target = None
+        if tk.asbool(ckan_config.get('ckanext.keycloak.enable_return_to', False)):
+            try:
+                target = ckan_session.pop('after_login_url', None)
+                ckan_session.save()
+            except Exception as e:
+                log.warning("Could not pop after_login_url from session: %r", e)
+                target = None
 
-        log.info("after_login_url from session (used as target if set): %r", target)
+        if not target:
+            # Fallback behavior: configurable, defaults to current behavior (user.me)
+            fb = ckan_config.get('ckanext.keycloak.return_to_fallback', 'route:user.me')
+            if fb.startswith('config:'):
+                # eg config:ckan.route_after_login
+                key = fb.split(':', 1)[1]
+                val = ckan_config.get(key)
+                if val and (val.startswith(('http://', 'https://', '/'))):
+                    target = val
+                else:
+                    target = h.url_for(val or 'user.me')
+            elif fb.startswith('route:'):
+                target = h.url_for(fb.split(':', 1)[1])
+            elif fb.startswith(('http://', 'https://', '/', 'url:')):
+                target = fb.replace('url:', '', 1)
+            else:
+                target = h.url_for('user.me')
 
-        if target:
-            response = tk.redirect_to(target)
-        else:
-            # previous behavior: go to "My Account" page
-            response = tk.redirect_to(tk.url_for('user.me', context))
-
+        response = tk.redirect_to(target)
         _log_user_into_ckan(response)
         log.info("Logged in success")
         return response

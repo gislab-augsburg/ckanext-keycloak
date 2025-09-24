@@ -63,7 +63,6 @@ To install ckanext-keycloak:
 
 Configuration settings to run the extension
 
-    
     ckanext.keycloak.server_url = link_to_keycloack_authentication_url
     ckanext.keycloak.client_id = client_id
     ckanext.keycloak.realm_name = realm_name
@@ -74,6 +73,33 @@ Configuration settings to run the extension
     ckanext.keycloak.scope = openid profile email (define other keycloak scopes here if necessary)
     ckanext.keycloak.user_name = preferred_username (keycloak token key which will be used for ckan user name)
     ckanext.keycloak.user_fullname = name (keycloak token key which will be used for ckan user fullname)
+
+### (Optional) Return users to the originally requested URL after SSO
+
+By default the extension redirects users to their account page after SSO.  
+To **opt in** to returning users to the URL they originally requested (eg a deep dataset/resource URL), enable:
+
+    # enable feature (default: false)
+    ckanext.keycloak.enable_return_to = true
+
+Safety and behavior (with defaults shown):
+
+    # Prefer ?came_from (eg set by ckanext-noanonaccess) over the HTTP Referer (default: true)
+    ckanext.keycloak.return_to_prefer_param = true
+    # Name of the query parameter to read (default: came_from)
+    ckanext.keycloak.return_to_param = came_from
+    # Only allow same-origin targets (highly recommended; default: true)
+    ckanext.keycloak.return_to_same_origin_only = true
+    # Disallow redirecting to auth endpoints to avoid loops
+    ckanext.keycloak.return_to_disallow_paths = /user/sso /user/sso_login /user/login /user/_logout /user/logged_out /user/logged_out_redirect /user/reset /user/locked
+
+Fallback if no stored target is available (defaults to current behavior):
+
+    # Use one of:
+    # - route:<route_name>       (eg route:user.me)
+    # - config:<ckan_config_key> (eg config:ckan.route_after_login)
+    # - an absolute or root-relative URL (eg /, https://example.org/)
+    ckanext.keycloak.return_to_fallback = route:user.me
     
 
 ## Developer installation
