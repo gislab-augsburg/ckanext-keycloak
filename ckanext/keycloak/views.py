@@ -9,10 +9,13 @@ from ckanext.keycloak.keycloak import KeycloakClient
 import ckanext.keycloak.helpers as helpers
 from os import environ
 
+# NEW: for safe return + session handling
+from urllib.parse import urlparse
+from ckan.common import session as ckan_session, config as ckan_config, request as ckan_request
+
 log = logging.getLogger(__name__)
 
 keycloak = Blueprint('keycloak', __name__, url_prefix='/user')
-
 
 server_url = tk.config.get('ckanext.keycloak.server_url', environ.get('CKANEXT__KEYCLOAK__SERVER_URL'))
 client_id = tk.config.get('ckanext.keycloak.client_id', environ.get('CKANEXT__KEYCLOAK__CLIENT_ID'))
@@ -24,6 +27,7 @@ user_name = tk.config.get('ckanext.keycloak.user_name', environ.get('CKANEXT__KE
 user_fullname = tk.config.get('ckanext.keycloak.user_fullname', environ.get('CKANEXT__KEYCLOAK__USER_FULLNAME'))
 
 client = KeycloakClient(server_url, client_id, realm_name, client_secret_key, scope)
+
 
 def _log_user_into_ckan(resp):
     """ Log the user into different CKAN versions.
@@ -45,8 +49,41 @@ def _log_user_into_ckan(resp):
 
     log.info(u'User {0}<{1}> logged in successfully'.format(g.user_obj.name, g.user_obj.email))
 
+
+# NEW: determine a safe return URL (same-origin, no auth routes)
+def _safe_return_to():
+    site_url = (ckan_config.get('ckan.site_url') or '').rstrip('/')
+    came_from = ckan_request.params.get('came_from')
+    referer = ckan_request.headers.get('Referer')
+    candidates = [came_from, referer, site_url or '/']
+
+    bad_paths = (
+        '/user/sso', '/user/sso_login', '/user/login', '/user/_logout',
+        '/user/logged_out', '/user/logged_out_redirect', '/user/reset', '/user/locked'
+    )
+
+    for url in candidates:
+        if not url:
+            continue
+        if site_url and str(url).startswith(site_url):
+            path = urlparse(url).path
+            if path in bad_paths:
+                continue
+            return url
+    return site_url or '/'
+
+
 def sso():
     log.info("SSO Login")
+
+    # NEW: remember where to return after SSO (FIRST URL wins)
+    try:
+        ckan_session['after_login_url'] = _safe_return_to()
+        ckan_session.save()
+    except Exception:
+        # don't block login flow if session storage has an issue
+        pass
+
     auth_url = None
     try:
         auth_url = client.get_auth_url(redirect_uri=redirect_uri)
@@ -54,6 +91,7 @@ def sso():
         log.error("Error getting auth url: {}".format(e))
         return tk.abort(500, "Error getting auth url: {}".format(e))
     return tk.redirect_to(auth_url)
+
 
 def sso_login():
     data = tk.request.args
@@ -76,13 +114,26 @@ def sso_login():
         context['user'] = g.user
         context['auth_user_obj'] = g.user_obj
 
-        response = tk.redirect_to(tk.url_for('user.me', context))
+        # PREFER the originally requested URL; fall back to your previous behavior
+        target = None
+        try:
+            target = ckan_session.pop('after_login_url', None)
+            ckan_session.save()
+        except Exception:
+            target = None
+
+        if target:
+            response = tk.redirect_to(target)
+        else:
+            # previous behavior: go to "My Account" page
+            response = tk.redirect_to(tk.url_for('user.me', context))
 
         _log_user_into_ckan(response)
         log.info("Logged in success")
         return response
     else:
         return tk.redirect_to(tk.url_for('user.login'))
+
 
 def reset_password():
     email = tk.request.form.get('user', None)
@@ -101,9 +152,11 @@ def reset_password():
         return tk.redirect_to(tk.url_for('user.login'))
     return RequestResetView().post()
 
+
 keycloak.add_url_rule('/sso', view_func=sso)
 keycloak.add_url_rule('/sso_login', view_func=sso_login)
 keycloak.add_url_rule('/reset_password', view_func=reset_password, methods=['POST'])
+
 
 def get_blueprint():
     return keycloak
