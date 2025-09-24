@@ -9,7 +9,7 @@ from ckanext.keycloak.keycloak import KeycloakClient
 import ckanext.keycloak.helpers as helpers
 from os import environ
 
-# NEW: for safe return + session handling
+# NEW: for safe return + session handling and logging
 from urllib.parse import urlparse
 from ckan.common import session as ckan_session, config as ckan_config, request as ckan_request
 
@@ -75,16 +75,19 @@ def _safe_return_to():
 
 def sso():
     log.info("SSO Login")
+    # debug: confirm we actually receive came_from
+    log.info("came_from query param: %r ; Referer: %r",
+             ckan_request.params.get('came_from'),
+             ckan_request.headers.get('Referer'))
 
-    # NEW: remember where to return after SSO (FIRST URL wins)
+    # remember where to return after SSO (FIRST URL wins)
     try:
         ckan_session['after_login_url'] = _safe_return_to()
         ckan_session.save()
-    except Exception:
-        # don't block login flow if session storage has an issue
-        pass
+        log.info("after_login_url stored in session: %r", ckan_session.get('after_login_url'))
+    except Exception as e:
+        log.warning("Could not store after_login_url in session: %r", e)
 
-    auth_url = None
     try:
         auth_url = client.get_auth_url(redirect_uri=redirect_uri)
     except Exception as e:
@@ -119,8 +122,11 @@ def sso_login():
         try:
             target = ckan_session.pop('after_login_url', None)
             ckan_session.save()
-        except Exception:
+        except Exception as e:
+            log.warning("Could not pop after_login_url from session: %r", e)
             target = None
+
+        log.info("after_login_url from session (used as target if set): %r", target)
 
         if target:
             response = tk.redirect_to(target)
