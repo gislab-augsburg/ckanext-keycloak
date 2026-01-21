@@ -70,7 +70,7 @@ def _safe_return_to():
             '/user/logged_out', '/user/logged_out_redirect', '/user/reset', '/user/locked'
         )
 
-    source = ckan_request.params.get(param_name) if prefer_param else None
+    source = ckan_request.args.get(param_name) if prefer_param else None
     if not source:
         source = ckan_request.headers.get('Referer')
     target = source or site_url or '/'
@@ -133,7 +133,8 @@ def sso_login():
         if tk.asbool(ckan_config.get('ckanext.keycloak.enable_return_to', False)):
             try:
                 target = ckan_session.pop('after_login_url', None)
-                ckan_session.save()
+                #ckan_session.save()
+                # no session.save for ckan 2.11, Flask 2.2+
             except Exception as e:
                 log.warning("Could not pop after_login_url from session: %r", e)
                 target = None
